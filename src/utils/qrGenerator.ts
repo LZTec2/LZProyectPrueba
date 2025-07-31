@@ -1,4 +1,4 @@
-import QRCode from 'qrcode';
+import QRCodeStyling from 'qr-code-styling';
 
 export interface QROptions {
   color1: string;
@@ -13,125 +13,139 @@ export const generateQRCode = async (
   options: QROptions
 ): Promise<string> => {
   try {
-    // Generate base QR code with high error correction for logo overlay
-    const qrDataURL = await QRCode.toDataURL(text, {
+    // Configure QR code styling options
+    const qrCodeConfig: any = {
       width: 400,
-      margin: 2,
-      color: {
-        dark: options.color1,
-        light: '#FFFFFF'
+      height: 400,
+      type: "canvas",
+      data: text,
+      margin: 10,
+      qrOptions: {
+        typeNumber: 0,
+        mode: "Byte",
+        errorCorrectionLevel: "H"
       },
-      errorCorrectionLevel: 'H' // High error correction allows for logo overlay
-    });
-
-    // Create canvas for customization
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d')!;
-    canvas.width = 400;
-    canvas.height = 400;
-
-    // Load base QR image
-    const qrImage = new Image();
-    await new Promise((resolve) => {
-      qrImage.onload = resolve;
-      qrImage.src = qrDataURL;
-    });
-
-    // Draw base QR
-    ctx.drawImage(qrImage, 0, 0);
+      imageOptions: {
+        hideBackgroundDots: true,
+        imageSize: 0.4,
+        margin: 5,
+        crossOrigin: "anonymous"
+      },
+      dotsOptions: {
+        color: options.color1,
+        type: mapDotStyle(options.dotStyle)
+      },
+      backgroundOptions: {
+        color: "#ffffff"
+      },
+      cornersSquareOptions: {
+        color: options.color1,
+        type: mapEyeStyle(options.eyeStyle)
+      },
+      cornersDotOptions: {
+        color: options.color1,
+        type: mapEyeStyle(options.eyeStyle)
+      }
+    };
 
     // Add gradient if second color is provided
     if (options.color2) {
-      const gradient = ctx.createLinearGradient(0, 0, 400, 400);
-      gradient.addColorStop(0, options.color1);
-      gradient.addColorStop(1, options.color2);
-      
-      // Create a mask from the original QR code
-      const imageData = ctx.getImageData(0, 0, 400, 400);
-      const data = imageData.data;
-      
-      // Apply gradient only to dark pixels
-      ctx.fillStyle = gradient;
-      for (let i = 0; i < data.length; i += 4) {
-        if (data[i] < 128) { // If pixel is dark
-          const x = (i / 4) % 400;
-          const y = Math.floor((i / 4) / 400);
-          ctx.fillRect(x, y, 1, 1);
-        }
-      }
+      qrCodeConfig.dotsOptions.gradient = {
+        type: "linear",
+        rotation: 45,
+        colorStops: [
+          { offset: 0, color: options.color1 },
+          { offset: 1, color: options.color2 }
+        ]
+      };
+      qrCodeConfig.cornersSquareOptions.gradient = {
+        type: "linear",
+        rotation: 45,
+        colorStops: [
+          { offset: 0, color: options.color1 },
+          { offset: 1, color: options.color2 }
+        ]
+      };
+      qrCodeConfig.cornersDotOptions.gradient = {
+        type: "linear",
+        rotation: 45,
+        colorStops: [
+          { offset: 0, color: options.color1 },
+          { offset: 1, color: options.color2 }
+        ]
+      };
     }
-
-    // Add custom top-left eye with green checkmark
-    await addCustomEye(ctx);
 
     // Add logo if provided
     if (options.logoImage) {
-      await addLogo(ctx, options.logoImage);
+      qrCodeConfig.image = options.logoImage;
     }
 
-    return canvas.toDataURL();
+    // Create QR code instance
+    const qrCode = new QRCodeStyling(qrCodeConfig);
+
+    // Generate and return data URL
+    const canvas = await qrCode.getRawData("canvas");
+    if (!canvas) {
+      throw new Error("Failed to generate QR code canvas");
+    }
+
+    // Add custom checkmark to top-left eye for verification
+    await addVerificationMark(canvas as HTMLCanvasElement);
+
+    return (canvas as HTMLCanvasElement).toDataURL();
   } catch (error) {
     console.error('Error generating QR code:', error);
     throw error;
   }
 };
 
-const addCustomEye = async (ctx: CanvasRenderingContext2D) => {
-  // Find the top-left finder pattern (approximately at 30-90, 30-90)
-  const eyeSize = 60;
-  const eyeX = 30;
-  const eyeY = 30;
+const mapDotStyle = (style: string): string => {
+  switch (style) {
+    case 'circle': return 'dots';
+    case 'rounded': return 'rounded';
+    case 'square': 
+    default: return 'square';
+  }
+};
+
+const mapEyeStyle = (style: string): string => {
+  switch (style) {
+    case 'circle': return 'dot';
+    case 'rounded': return 'extra-rounded';
+    case 'square':
+    default: return 'square';
+  }
+};
+
+const addVerificationMark = async (canvas: HTMLCanvasElement) => {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  // Find the top-left finder pattern position
+  const eyeSize = 50;
+  const eyeX = 25;
+  const eyeY = 25;
   
-  // Clear the area and draw white background
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(eyeX, eyeY, eyeSize, eyeSize);
+  // Add a small green checkmark in the corner of the top-left eye
+  const checkSize = 12;
+  const checkX = eyeX + eyeSize - checkSize - 5;
+  const checkY = eyeY + 5;
   
-  // Draw outer black border
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(eyeX, eyeY, eyeSize, 8); // top
-  ctx.fillRect(eyeX, eyeY, 8, eyeSize); // left
-  ctx.fillRect(eyeX + eyeSize - 8, eyeY, 8, eyeSize); // right
-  ctx.fillRect(eyeX, eyeY + eyeSize - 8, eyeSize, 8); // bottom
-  
-  // Draw green center with checkmark
+  // Draw green background circle
   ctx.fillStyle = '#00FF00';
-  ctx.fillRect(eyeX + 15, eyeY + 15, 30, 30);
+  ctx.beginPath();
+  ctx.arc(checkX + checkSize/2, checkY + checkSize/2, checkSize/2, 0, 2 * Math.PI);
+  ctx.fill();
   
-  // Draw checkmark symbol
-  ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 3;
+  // Draw white checkmark
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 2;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(eyeX + 22, eyeY + 30);
-  ctx.lineTo(eyeX + 28, eyeY + 36);
-  ctx.lineTo(eyeX + 38, eyeY + 22);
+  ctx.moveTo(checkX + 3, checkY + checkSize/2);
+  ctx.lineTo(checkX + checkSize/2, checkY + checkSize - 3);
+  ctx.lineTo(checkX + checkSize - 3, checkY + 3);
   ctx.stroke();
-};
-
-const addLogo = async (ctx: CanvasRenderingContext2D, logoDataURL: string) => {
-  const logo = new Image();
-  await new Promise((resolve, reject) => {
-    logo.onload = resolve;
-    logo.onerror = reject;
-    logo.src = logoDataURL;
-  });
-
-  const logoSize = 60;
-  const x = (400 - logoSize) / 2;
-  const y = (400 - logoSize) / 2;
-
-  // Add white background circle for logo
-  ctx.fillStyle = '#FFFFFF';
-  ctx.beginPath();
-  ctx.arc(x + logoSize/2, y + logoSize/2, logoSize/2 + 5, 0, 2 * Math.PI);
-  ctx.fill();
-  
-  // Draw logo
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(x + logoSize/2, y + logoSize/2, logoSize/2, 0, 2 * Math.PI);
-  ctx.clip();
-  ctx.drawImage(logo, x, y, logoSize, logoSize);
-  ctx.restore();
 };
