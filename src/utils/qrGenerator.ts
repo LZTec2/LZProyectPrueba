@@ -84,16 +84,20 @@ export const generateQRCode = async (
     // Create QR code instance
     const qrCode = new QRCodeStyling(qrCodeConfig);
 
-    // Generate and return data URL
-    const canvas = await qrCode.getRawData("canvas");
+    // Create a temporary div and append the QR code to get the canvas
+    const tempDiv = document.createElement('div');
+    qrCode.append(tempDiv);
+    
+    // Get the canvas element from the temporary div
+    const canvas = tempDiv.querySelector('canvas');
     if (!canvas) {
       throw new Error("Failed to generate QR code canvas");
     }
 
     // Add custom checkmark to top-left eye for verification
-    await addVerificationMark(canvas as HTMLCanvasElement);
+    await addVerificationMark(canvas);
 
-    return (canvas as HTMLCanvasElement).toDataURL();
+    return canvas.toDataURL();
   } catch (error) {
     console.error('Error generating QR code:', error);
     throw error;
