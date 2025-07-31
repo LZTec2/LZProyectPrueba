@@ -111,7 +111,7 @@ export const generateQRCode = async (
               ctx.drawImage(img, 0, 0);
               
               // Add verification mark
-              addVerificationMark(canvas);
+              addCustomEye(canvas);
               
               resolve(canvas.toDataURL());
             } else {
@@ -148,34 +148,37 @@ const mapEyeStyle = (style: string): string => {
   }
 };
 
-const addVerificationMark = (canvas: HTMLCanvasElement) => {
+const addCustomEye = async (canvas: HTMLCanvasElement) => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  // Find the top-left finder pattern position
-  const eyeSize = 50;
-  const eyeX = 25;
-  const eyeY = 25;
+  // Find the top-left finder pattern (approximately at 30-90, 30-90)
+  const eyeSize = 60;
+  const eyeX = 44;
+  const eyeY = 44;  
+  // Clear the area and draw white background
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(eyeX, eyeY, eyeSize, eyeSize);
   
-  // Add a small green checkmark in the corner of the top-left eye
-  const checkSize = 12;
-  const checkX = eyeX + eyeSize - checkSize - 5;
-  const checkY = eyeY + 5;
+  // Draw outer black border
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(eyeX, eyeY, eyeSize, 8); // top
+  ctx.fillRect(eyeX, eyeY, 8, eyeSize); // left
+  ctx.fillRect(eyeX + eyeSize - 8, eyeY, 8, eyeSize); // right
+  ctx.fillRect(eyeX, eyeY + eyeSize - 8, eyeSize, 8); // bottom
   
-  // Draw green background circle
+  // Draw green center with checkmark
   ctx.fillStyle = '#00FF00';
-  ctx.beginPath();
-  ctx.arc(checkX + checkSize/2, checkY + checkSize/2, checkSize/2, 0, 2 * Math.PI);
-  ctx.fill();
+  ctx.fillRect(eyeX + 15, eyeY + 15, 30, 30);
   
-  // Draw white checkmark
-  ctx.strokeStyle = '#FFFFFF';
-  ctx.lineWidth = 2;
+  // Draw checkmark symbol
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 3;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(checkX + 3, checkY + checkSize/2);
-  ctx.lineTo(checkX + checkSize/2, checkY + checkSize - 3);
-  ctx.lineTo(checkX + checkSize - 3, checkY + 3);
+  ctx.moveTo(eyeX + 22, eyeY + 30);
+  ctx.lineTo(eyeX + 28, eyeY + 36);
+  ctx.lineTo(eyeX + 38, eyeY + 22);
   ctx.stroke();
 };
