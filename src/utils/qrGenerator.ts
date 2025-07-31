@@ -12,96 +12,122 @@ export const generateQRCode = async (
   text: string,
   options: QROptions
 ): Promise<string> => {
-  try {
-    // Configure QR code styling options
-    const qrCodeConfig: any = {
-      width: 400,
-      height: 400,
-      type: "canvas",
-      data: text,
-      margin: 10,
-      qrOptions: {
-        typeNumber: 0,
-        mode: "Byte",
-        errorCorrectionLevel: "H"
-      },
-      imageOptions: {
-        hideBackgroundDots: true,
-        imageSize: 0.4,
-        margin: 5,
-        crossOrigin: "anonymous"
-      },
-      dotsOptions: {
-        color: options.color1,
-        type: mapDotStyle(options.dotStyle)
-      },
-      backgroundOptions: {
-        color: "#ffffff"
-      },
-      cornersSquareOptions: {
-        color: options.color1,
-        type: mapEyeStyle(options.eyeStyle)
-      },
-      cornersDotOptions: {
-        color: options.color1,
-        type: mapEyeStyle(options.eyeStyle)
+  return new Promise((resolve, reject) => {
+    try {
+      // Configure QR code styling options
+      const qrCodeConfig: any = {
+        width: 400,
+        height: 400,
+        type: "canvas",
+        data: text,
+        margin: 10,
+        qrOptions: {
+          typeNumber: 0,
+          mode: "Byte",
+          errorCorrectionLevel: "M"
+        },
+        imageOptions: {
+          hideBackgroundDots: true,
+          imageSize: 0.4,
+          margin: 5,
+          crossOrigin: "anonymous"
+        },
+        dotsOptions: {
+          color: options.color1,
+          type: mapDotStyle(options.dotStyle)
+        },
+        backgroundOptions: {
+          color: "#ffffff"
+        },
+        cornersSquareOptions: {
+          color: options.color1,
+          type: mapEyeStyle(options.eyeStyle)
+        },
+        cornersDotOptions: {
+          color: options.color1,
+          type: mapEyeStyle(options.eyeStyle)
+        }
+      };
+
+      // Add gradient if second color is provided
+      if (options.color2 && options.color2 !== options.color1) {
+        qrCodeConfig.dotsOptions.gradient = {
+          type: "linear",
+          rotation: 45,
+          colorStops: [
+            { offset: 0, color: options.color1 },
+            { offset: 1, color: options.color2 }
+          ]
+        };
+        qrCodeConfig.cornersSquareOptions.gradient = {
+          type: "linear",
+          rotation: 45,
+          colorStops: [
+            { offset: 0, color: options.color1 },
+            { offset: 1, color: options.color2 }
+          ]
+        };
+        qrCodeConfig.cornersDotOptions.gradient = {
+          type: "linear",
+          rotation: 45,
+          colorStops: [
+            { offset: 0, color: options.color1 },
+            { offset: 1, color: options.color2 }
+          ]
+        };
       }
-    };
 
-    // Add gradient if second color is provided
-    if (options.color2) {
-      qrCodeConfig.dotsOptions.gradient = {
-        type: "linear",
-        rotation: 45,
-        colorStops: [
-          { offset: 0, color: options.color1 },
-          { offset: 1, color: options.color2 }
-        ]
-      };
-      qrCodeConfig.cornersSquareOptions.gradient = {
-        type: "linear",
-        rotation: 45,
-        colorStops: [
-          { offset: 0, color: options.color1 },
-          { offset: 1, color: options.color2 }
-        ]
-      };
-      qrCodeConfig.cornersDotOptions.gradient = {
-        type: "linear",
-        rotation: 45,
-        colorStops: [
-          { offset: 0, color: options.color1 },
-          { offset: 1, color: options.color2 }
-        ]
-      };
+      // Add logo if provided
+      if (options.logoImage) {
+        qrCodeConfig.image = options.logoImage;
+      }
+
+      // Create QR code instance
+      const qrCode = new QRCodeStyling(qrCodeConfig);
+
+      // Use getRawData to get the canvas data URL
+      qrCode.getRawData("png").then((buffer) => {
+        if (!buffer) {
+          reject(new Error("Failed to generate QR code"));
+          return;
+        }
+
+        // Convert buffer to data URL
+        const blob = new Blob([buffer], { type: "image/png" });
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          
+          // Create an image to add verification mark
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 400;
+            const ctx = canvas.getContext('2d');
+            
+            if (ctx) {
+              // Draw the QR code
+              ctx.drawImage(img, 0, 0);
+              
+              // Add verification mark
+              addVerificationMark(canvas);
+              
+              resolve(canvas.toDataURL());
+            } else {
+              resolve(dataUrl);
+            }
+          };
+          img.src = dataUrl;
+        };
+        reader.readAsDataURL(blob);
+      }).catch(reject);
+
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      reject(error);
     }
-
-    // Add logo if provided
-    if (options.logoImage) {
-      qrCodeConfig.image = options.logoImage;
-    }
-
-    // Create QR code instance
-    const qrCode = new QRCodeStyling(qrCodeConfig);
-
-    // Create a temporary div and append the QR code to get the canvas
-    const tempDiv = document.createElement('div');
-    qrCode.append(tempDiv);
-    
-    // Get the canvas element from the temporary div
-    const canvas = tempDiv.querySelector('canvas');
-    if (!canvas) {
-      throw new Error("Failed to generate QR code canvas");
-    }
-
-    // Add custom checkmark to top-left eye for verification
-    await addVerificationMark(canvas);
-
-    return canvas.toDataURL();
-  } catch (error) {
-    console.error('Error generating QR code:', error);
-    throw error;
-  }
+  });
 };
 
 const mapDotStyle = (style: string): string => {
@@ -122,7 +148,7 @@ const mapEyeStyle = (style: string): string => {
   }
 };
 
-const addVerificationMark = async (canvas: HTMLCanvasElement) => {
+const addVerificationMark = (canvas: HTMLCanvasElement) => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
