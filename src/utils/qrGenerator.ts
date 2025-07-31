@@ -152,33 +152,49 @@ const addCustomEye = async (canvas: HTMLCanvasElement) => {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  // Find the top-left finder pattern (approximately at 30-90, 30-90)
+  // Coordenadas y tamaño del ojo
   const eyeSize = 60;
   const eyeX = 44;
-  const eyeY = 44;  
-  // Clear the area and draw white background
+  const eyeY = 44;
+
+  // Fondo blanco circular
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(eyeX + eyeSize/2, eyeY + eyeSize/2, eyeSize/2, 0, 2 * Math.PI);
+  ctx.closePath();
   ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(eyeX, eyeY, eyeSize, eyeSize);
-  
-  // Draw outer black border
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(eyeX, eyeY, eyeSize, 8); // top
-  ctx.fillRect(eyeX, eyeY, 8, eyeSize); // left
-  ctx.fillRect(eyeX + eyeSize - 8, eyeY, 8, eyeSize); // right
-  ctx.fillRect(eyeX, eyeY + eyeSize - 8, eyeSize, 8); // bottom
-  
-  // Draw green center with checkmark
+  ctx.fill();
+  ctx.restore();
+
+  // Borde negro circular
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(eyeX + eyeSize/2, eyeY + eyeSize/2, eyeSize/2, 0, 2 * Math.PI);
+  ctx.closePath();
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = '#000000';
+  ctx.stroke();
+  ctx.restore();
+
+  // Centro verde circular
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(eyeX + eyeSize/2, eyeY + eyeSize/2, 15, 0, 2 * Math.PI);
+  ctx.closePath();
   ctx.fillStyle = '#00FF00';
-  ctx.fillRect(eyeX + 15, eyeY + 15, 30, 30);
-  
-  // Draw checkmark symbol
+  ctx.fill();
+  ctx.restore();
+
+  // Check en el centro
+  ctx.save();
   ctx.strokeStyle = '#000000';
   ctx.lineWidth = 3;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   ctx.beginPath();
-  ctx.moveTo(eyeX + 22, eyeY + 30);
-  ctx.lineTo(eyeX + 28, eyeY + 36);
-  ctx.lineTo(eyeX + 38, eyeY + 22);
+  ctx.moveTo(eyeX + eyeSize/2 - 7, eyeY + eyeSize/2 + 2);
+  ctx.lineTo(eyeX + eyeSize/2 - 1, eyeY + eyeSize/2 + 8);
+  ctx.lineTo(eyeX + eyeSize/2 + 10, eyeY + eyeSize/2 - 6);
   ctx.stroke();
+  ctx.restore();
 };
