@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Download, Upload, Palette, Eye, Grid } from 'lucide-react';
+import { Download, Upload, Palette, Eye, Grid, Sparkles } from 'lucide-react';
 import { generateQRCode } from '../utils/qrGenerator';
 import { qrDatabase } from '../utils/database';
 import { QRCode, QRGeneratorOptions } from '../types';
@@ -264,9 +264,19 @@ const QRGenerator: React.FC = () => {
             <button
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-blue-600 to-green-400 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-blue-600 to-green-400 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-green-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              {isGenerating ? 'Generando...' : 'Generar QR'}
+              {isGenerating ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Generando...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2" size={20} />
+                  Generar QR Estilizado
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -274,12 +284,19 @@ const QRGenerator: React.FC = () => {
         {/* Preview */}
         <div className="space-y-6">
           <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-            <h2 className="text-xl font-semibold text-white mb-4">Vista previa</h2>
+            <h2 className="text-xl font-semibold text-white mb-4 flex items-center">
+              <Eye className="mr-2" size={20} />
+              Vista previa
+            </h2>
             
             {qrDataURL ? (
               <div className="text-center">
                 <div className="bg-white p-4 rounded-lg inline-block mb-4">
                   <img src={qrDataURL} alt="QR Code" className="w-64 h-64" />
+                </div>
+                <div className="text-sm text-gray-400 mb-4">
+                  <p>✓ QR generado con estilos personalizados</p>
+                  <p>✓ Marca de verificación incluida</p>
                 </div>
                 <button
                   onClick={handleDownload}
@@ -292,7 +309,10 @@ const QRGenerator: React.FC = () => {
             ) : (
               <div className="bg-gray-800 rounded-lg p-8 text-center">
                 <div className="w-64 h-64 mx-auto bg-gray-700 rounded-lg flex items-center justify-center">
-                  <span className="text-gray-500">QR aparecerá aquí</span>
+                  <div className="text-center">
+                    <Sparkles className="w-12 h-12 text-gray-500 mx-auto mb-2" />
+                    <span className="text-gray-500">QR estilizado aparecerá aquí</span>
+                  </div>
                 </div>
               </div>
             )}

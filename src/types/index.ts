@@ -22,6 +22,6 @@ export interface QRGeneratorOptions {
   color2?: string;
   eyeStyle: 'square' | 'circle' | 'rounded';
   dotStyle: 'square' | 'circle' | 'rounded';
-  logoImage?: File;
+  logoImage?: string;
   isPublic: boolean;
 }
