@@ -1,3 +1,4 @@
+// Componente principal para escanear y verificar códigos QR
 import React, { useState, useRef } from 'react';
 import { Camera, Upload, CheckCircle, AlertTriangle, ExternalLink } from 'lucide-react';
 import QrScanner from 'qr-scanner';
@@ -5,40 +6,46 @@ import { qrDatabase } from '../utils/database';
 import { QRCode } from '../types';
 
 const QRScannerComponent: React.FC = () => {
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanResult, setScanResult] = useState<string>('');
-  const [qrInfo, setQrInfo] = useState<QRCode | null>(null);
-  const [isVerified, setIsVerified] = useState<boolean | null>(null);
-  const [error, setError] = useState<string>('');
-  
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const qrScannerRef = useRef<QrScanner | null>(null);
+  // Estado para controlar si la cámara está activa
+  const [isScanning, setIsScanning] = useState(false); // ¿Está escaneando con cámara?
+  const [scanResult, setScanResult] = useState<string>(''); // Resultado del QR leído
+  const [qrInfo, setQrInfo] = useState<QRCode | null>(null); // Info del QR en la base de datos
+  const [isVerified, setIsVerified] = useState<boolean | null>(null); // ¿El QR está verificado?
+  const [error, setError] = useState<string>(''); // Mensaje de error
 
+  // Referencias a elementos del DOM
+  const videoRef = useRef<HTMLVideoElement>(null); // Video para cámara
+  const fileInputRef = useRef<HTMLInputElement>(null); // Input para subir imagen
+  const qrScannerRef = useRef<QrScanner | null>(null); // Instancia de QrScanner
+
+  // Inicia el escaneo usando la cámara del dispositivo
   const startCameraScanning = async () => {
     try {
       setError('');
       if (!videoRef.current) return;
 
-      // Stop any existing scanner
+      // Detener y limpiar cualquier escáner previo
       if (qrScannerRef.current) {
         qrScannerRef.current.stop();
         qrScannerRef.current.destroy();
       }
 
+      // Crear nueva instancia de QrScanner y configurar callback
       qrScannerRef.current = new QrScanner(
         videoRef.current,
         async (result) => {
+          // Cuando detecta un QR, procesa el resultado y detiene el escaneo
           await handleScanResult(result.data);
           stopScanning();
         },
         {
-          highlightScanRegion: true,
-          highlightCodeOutline: true,
-          preferredCamera: 'environment'
+          highlightScanRegion: true, // Resalta la región de escaneo
+          highlightCodeOutline: true, // Resalta el contorno del QR
+          preferredCamera: 'environment' // Usa la cámara trasera si es posible
         }
       );
 
+      // Inicia la cámara y el escaneo
       await qrScannerRef.current.start();
       setIsScanning(true);
     } catch (err) {
@@ -47,6 +54,7 @@ const QRScannerComponent: React.FC = () => {
     }
   };
 
+  // Detiene el escaneo y libera recursos de la cámara
   const stopScanning = () => {
     if (qrScannerRef.current) {
       qrScannerRef.current.stop();
@@ -56,12 +64,14 @@ const QRScannerComponent: React.FC = () => {
     setIsScanning(false);
   };
 
+  // Permite subir una imagen y escanear el QR en ella
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     try {
       setError('');
+      // Usa QrScanner para leer el QR de la imagen subida
       const result = await QrScanner.scanImage(file);
       await handleScanResult(result);
     } catch (err) {
@@ -70,16 +80,19 @@ const QRScannerComponent: React.FC = () => {
     }
   };
 
+  // Procesa el resultado del QR leído (de cámara o imagen)
   const handleScanResult = async (decodedText: string) => {
     setScanResult(decodedText);
     
     try {
-      // Check if QR is in database
+      // Busca el QR en la base de datos local
       const foundQR = await qrDatabase.findQRByContent(decodedText);
       if (foundQR) {
+        // Si existe, lo marca como verificado y muestra info
         setQrInfo(foundQR);
         setIsVerified(true);
       } else {
+        // Si no existe, lo marca como no verificado
         setQrInfo(null);
         setIsVerified(false);
       }
@@ -89,6 +102,7 @@ const QRScannerComponent: React.FC = () => {
     }
   };
 
+  // Abre el contenido del QR según su tipo (URL, email, teléfono, texto)
   const openContent = () => {
     if (!scanResult) return;
 
@@ -106,6 +120,7 @@ const QRScannerComponent: React.FC = () => {
     }
   };
 
+  // Resetea el estado del escáner para leer otro QR
   const resetScanner = () => {
     setScanResult('');
     setQrInfo(null);
@@ -114,6 +129,7 @@ const QRScannerComponent: React.FC = () => {
     stopScanning();
   };
 
+  // Limpia recursos de la cámara al desmontar el componente
   React.useEffect(() => {
     return () => {
       stopScanning();
