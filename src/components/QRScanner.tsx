@@ -75,7 +75,7 @@ const QRScannerComponent: React.FC = () => {
       const result = await QrScanner.scanImage(file);
       await handleScanResult(result);
     } catch (err) {
-      console.error('Error scanning image:', err);
+      console.warn('Error scanning image:', err);
       setError('No se pudo leer el código QR de la imagen.');
     }
   };
