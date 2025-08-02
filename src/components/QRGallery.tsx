@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, User, Calendar, ExternalLink, Eye, Download } from 'lucide-react';
-import { qrDatabase } from '../utils/database';
+import { apiDatabase } from '../utils/apiDatabase';
 import { QRCode } from '../types';
 import { generateQRCode } from '../utils/qrGenerator';
 
@@ -23,7 +23,7 @@ const QRGallery: React.FC = () => {
 
   const loadQRCodes = async () => {
     try {
-      const codes = await qrDatabase.getPublicQRCodes();
+      const codes = await apiDatabase.getPublicQRCodes();
       setQrCodes(codes);
       
       // Generate QR images for each code
@@ -46,6 +46,7 @@ const QRGallery: React.FC = () => {
       setLoading(false);
     } catch (error) {
       console.error('Error loading QR codes:', error);
+      alert('Error al cargar los códigos QR desde el servidor');
       setLoading(false);
     }
   };

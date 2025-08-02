@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { Camera, Upload, CheckCircle, AlertTriangle, ExternalLink } from 'lucide-react';
 import QrScanner from 'qr-scanner';
-import { qrDatabase } from '../utils/database';
+import { apiDatabase } from '../utils/apiDatabase';
 import { QRCode } from '../types';
 
 const QRScannerComponent: React.FC = () => {
@@ -86,7 +86,7 @@ const QRScannerComponent: React.FC = () => {
     
     try {
       // Busca el QR en la base de datos local
-      const foundQR = await qrDatabase.findQRByContent(decodedText);
+      const foundQR = await apiDatabase.findQRByContent(decodedText);
       if (foundQR) {
         // Si existe, lo marca como verificado y muestra info
         setQrInfo(foundQR);
@@ -98,6 +98,7 @@ const QRScannerComponent: React.FC = () => {
       }
     } catch (error) {
       console.error('Error checking QR in database:', error);
+      alert('Error al validar el código QR con el servidor');
       setIsVerified(false);
     }
   };

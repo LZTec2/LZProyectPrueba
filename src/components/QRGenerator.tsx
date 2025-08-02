@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Download, Upload, Palette, Eye, Grid, Sparkles } from 'lucide-react';
 import { generateQRCode } from '../utils/qrGenerator';
-import { qrDatabase } from '../utils/database';
+import { apiDatabase } from '../utils/apiDatabase';
 import { QRCode, QRGeneratorOptions } from '../types';
 
 const QRGenerator: React.FC = () => {
@@ -53,8 +53,7 @@ const QRGenerator: React.FC = () => {
       setQrDataURL(qrCode);
 
       // Save to database
-      const qrData: QRCode = {
-        id: Date.now().toString(),
+      const qrData: Omit<QRCode, 'id' | 'createdAt'> = {
         name: options.name,
         type: options.type,
         content: options.content,
@@ -64,11 +63,10 @@ const QRGenerator: React.FC = () => {
         eyeStyle: options.eyeStyle,
         dotStyle: options.dotStyle,
         logoImage: logoImage || undefined,
-        createdAt: new Date(),
         isPublic: options.isPublic
       };
 
-      await qrDatabase.saveQRCode(qrData);
+      await apiDatabase.saveQRCode(qrData);
     } catch (error) {
       console.error('Error generating QR:', error);
       alert('Error al generar el código QR');
