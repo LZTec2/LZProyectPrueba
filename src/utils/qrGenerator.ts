@@ -111,7 +111,7 @@ export const generateQRCode = async (
               ctx.drawImage(img, 0, 0);
               
               // Add verification mark
-              addCustomEye(canvas);
+              //addCustomEye(canvas);
               
               resolve(canvas.toDataURL());
             } else {
@@ -153,9 +153,9 @@ const addCustomEye = async (canvas: HTMLCanvasElement) => {
   if (!ctx) return;
 
   // Coordenadas y tamaño del ojo
-  const eyeSize = 60;
-  const eyeX = 44;
-  const eyeY = 44;
+  const eyeSize = 20;
+  const eyeX = 53;
+  const eyeY = 53;
 
   // Fondo blanco circular
   ctx.save();
