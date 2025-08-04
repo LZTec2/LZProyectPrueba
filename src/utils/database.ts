@@ -1,88 +1,65 @@
+
 import { QRCode } from '../types';
 
-const DB_NAME = 'CheckCodeDB';
-const DB_VERSION = 1;
-const STORE_NAME = 'qrcodes';
+const API_URL = 'https://07p42qhn-8000.brs.devtunnels.ms/api/qr/';
+const API_PUBLIC_URL = 'https://07p42qhn-8000.brs.devtunnels.ms/api/qr/public/';
+const API_SEARCH_URL = 'https://07p42qhn-8000.brs.devtunnels.ms/api/qr/search/';
+const API_CONTENT_URL = 'https://07p42qhn-8000.brs.devtunnels.ms/api/qr/content/';
 
 class QRDatabase {
-  private db: IDBDatabase | null = null;
-
-  async init(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        this.db = request.result;
-        resolve();
-      };
-
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-          store.createIndex('name', 'name', { unique: false });
-          store.createIndex('author', 'author', { unique: false });
-          store.createIndex('content', 'content', { unique: false });
-        }
-      };
-    });
-  }
-
+  // Guarda un QR usando la API Django
   async saveQRCode(qrCode: QRCode): Promise<void> {
-    if (!this.db) await this.init();
-    
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.put(qrCode);
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve();
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(qrCode),
     });
+    if (!response.ok) throw new Error('Error al guardar QR');
   }
 
+  // Obtiene todos los QR usando la API Django
   async getAllQRCodes(): Promise<QRCode[]> {
-    if (!this.db) await this.init();
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([STORE_NAME], 'readonly');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.getAll();
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result);
-    });
+    const response = await fetch(API_URL);
+    if (!response.ok) throw new Error('Error al cargar los QR');
+    const data = await response.json();
+    return data.map((qr: any) => ({
+      ...qr,
+      createdAt: new Date(qr.createdAt),
+    }));
   }
 
+  // Obtiene solo los QR públicos desde el endpoint dedicado
   async getPublicQRCodes(): Promise<QRCode[]> {
-    const allCodes = await this.getAllQRCodes();
-    return allCodes.filter(qr => qr.isPublic);
+    const response = await fetch(API_PUBLIC_URL);
+    if (!response.ok) throw new Error('Error al cargar los QR públicos');
+    const data = await response.json();
+    return data.map((qr: any) => ({
+      ...qr,
+      createdAt: new Date(qr.createdAt),
+    }));
   }
 
+  // Busca un QR por su contenido usando el endpoint dedicado
   async findQRByContent(content: string): Promise<QRCode | null> {
-    if (!this.db) await this.init();
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([STORE_NAME], 'readonly');
-      const store = transaction.objectStore(STORE_NAME);
-      const index = store.index('content');
-      const request = index.get(content);
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result || null);
-    });
+    const response = await fetch(`${API_CONTENT_URL}${encodeURIComponent(content)}/`);
+    if (!response.ok) return null;
+    const qr = await response.json();
+    if (!qr || !qr.id) return null;
+    return {
+      ...qr,
+      createdAt: new Date(qr.createdAt),
+    };
   }
 
+  // Busca QR por texto usando el endpoint dedicado
   async searchQRCodes(query: string): Promise<QRCode[]> {
-    const allCodes = await this.getPublicQRCodes();
-    const lowerQuery = query.toLowerCase();
-    
-    return allCodes.filter(qr => 
-      qr.name.toLowerCase().includes(lowerQuery) ||
-      qr.author.toLowerCase().includes(lowerQuery) ||
-      qr.content.toLowerCase().includes(lowerQuery)
-    );
+    const response = await fetch(`${API_SEARCH_URL}?q=${encodeURIComponent(query)}`);
+    if (!response.ok) throw new Error('Error al buscar QR');
+    const data = await response.json();
+    return data.map((qr: any) => ({
+      ...qr,
+      createdAt: new Date(qr.createdAt),
+    }));
   }
 }
 
