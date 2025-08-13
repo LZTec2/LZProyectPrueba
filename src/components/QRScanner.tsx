@@ -217,30 +217,41 @@ const QRScannerComponent: React.FC = () => {
           <div className="space-y-6">
             <div className="bg-gray-800 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Resultado del Escaneo</h3>
-              
-              {isVerified === true && qrInfo ? (
-                <div className="bg-green-900/30 border border-green-500 rounded-lg p-4 mb-4">
-                  <div className="flex items-center mb-3">
-                    <CheckCircle className="text-green-400 mr-2" size={20} />
-                    <span className="text-green-400 font-semibold">QR Verificado</span>
-                  </div>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="text-gray-400">Nombre:</span> <span className="text-white">{qrInfo.name}</span></p>
-                    <p><span className="text-gray-400">Autor:</span> <span className="text-white">{qrInfo.author}</span></p>
-                    <p><span className="text-gray-400">Tipo:</span> <span className="text-white">{qrInfo.type}</span></p>
-                    <p><span className="text-gray-400">Creado:</span> <span className="text-white">{new Date(qrInfo.createdAt).toLocaleDateString()}</span></p>
-                  </div>
+              {/* Loader mientras se verifica el QR */}
+              {isVerified === null && (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
+                  <span className="text-gray-400">Verificando QR...</span>
                 </div>
-              ) : (
-                <div className="bg-red-900/30 border border-red-500 rounded-lg p-4 mb-4">
-                  <div className="flex items-center mb-2">
-                    <AlertTriangle className="text-red-400 mr-2" size={20} />
-                    <span className="text-red-400 font-semibold">Este QR no está verificado</span>
-                  </div>
-                  <p className="text-red-300 text-sm">
-                    Ingrese bajo su propio riesgo.
-                  </p>
-                </div>
+              )}
+              {/* Mostrar resultado solo cuando isVerified ya tiene valor */}
+              {isVerified !== null && (
+                <>
+                  {isVerified === true && qrInfo ? (
+                    <div className="bg-green-900/30 border border-green-500 rounded-lg p-4 mb-4">
+                      <div className="flex items-center mb-3">
+                        <CheckCircle className="text-green-400 mr-2" size={20} />
+                        <span className="text-green-400 font-semibold">QR Verificado</span>
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <p><span className="text-gray-400">Nombre:</span> <span className="text-white">{qrInfo.name}</span></p>
+                        <p><span className="text-gray-400">Autor:</span> <span className="text-white">{qrInfo.author}</span></p>
+                        <p><span className="text-gray-400">Tipo:</span> <span className="text-white">{qrInfo.type}</span></p>
+                        <p><span className="text-gray-400">Creado:</span> <span className="text-white">{new Date(qrInfo.createdAt).toLocaleDateString()}</span></p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-red-900/30 border border-red-500 rounded-lg p-4 mb-4">
+                      <div className="flex items-center mb-2">
+                        <AlertTriangle className="text-red-400 mr-2" size={20} />
+                        <span className="text-red-400 font-semibold">Este QR no está verificado</span>
+                      </div>
+                      <p className="text-red-300 text-sm">
+                        Ingrese bajo su propio riesgo.
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
 
               <div className="bg-gray-700 rounded-lg p-4 mb-4">

@@ -18,7 +18,7 @@ const QRGenerator: React.FC = () => {
   });
   
   const [qrDataURL, setQrDataURL] = useState<string>('');
-  const [logoImage, setLogoImage] = useState<string>('');
+  const [logoImage, setLogoImage] = useState<string>('/check.png');
   const [isGenerating, setIsGenerating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -221,32 +221,7 @@ const QRGenerator: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
-                  <Upload className="mr-1" size={16} />
-                  Logo central (opcional)
-                </label>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoUpload}
-                  className="hidden"
-                />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-gray-300 hover:bg-gray-700 transition-colors flex items-center justify-center"
-                >
-                  <Upload className="mr-2" size={16} />
-                  Subir imagen
-                </button>
-                {logoImage && (
-                  <div className="mt-2">
-                    <img src={logoImage} alt="Logo preview" className="w-16 h-16 object-cover rounded-lg" />
-                  </div>
-                )}
-              </div>
-
+              
               <div className="flex items-center">
                 <input
                   type="checkbox"
